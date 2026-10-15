@@ -38,7 +38,6 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(update_all, 'cron', hour=0, minute=0)
 scheduler.start()
 
-# 서버 시작시 한번 실행
 threading.Thread(target=update_all, daemon=True).start()
 
 @app.get("/")
@@ -76,7 +75,7 @@ def get_volunteers(page: int = 1):
     conn.close()
     return {"page": page, "data": rows}
 
-    @app.get("/fetch-data")
+@app.get("/fetch-data")
 def fetch_data():
     try:
         update_all()
