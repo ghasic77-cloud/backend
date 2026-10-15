@@ -12,23 +12,21 @@ def get_scholarship():
     url = "https://api.odcloud.kr/api/15028252/v1/uddi:3b2a715a-b097-4a7f-838e-da2e5b9ba8e8"
     conn = get_connection()
     cur = conn.cursor()
-    page = 1
-    while True:
-        params = {"serviceKey": API_KEY, "numOfRows": "100", "page": str(page)}
-        response = requests.get(url, params=params)
-        data = response.json()
-        items = data.get('data', [])
-        if not items:
+    for page in range(1, 6):
+        try:
+            params = {"serviceKey": API_KEY, "numOfRows": "100", "page": str(page)}
+            response = requests.get(url, params=params, timeout=15)
+            data = response.json()
+            items = data.get('data', [])
+            if not items:
+                break
+            for item in items:
+                name = item.get('장학금명')
+                description = item.get('장학금설명')
+                cur.execute("INSERT INTO subsidies (name, description, source) VALUES (%s, %s, '한국장학재단') ON CONFLICT DO NOTHING", (name, description))
+        except Exception as e:
+            print(f"장학금 오류: {e}")
             break
-        for item in items:
-            name = item.get('장학금명')
-            description = item.get('장학금설명')
-            cur.execute("""
-                INSERT INTO subsidies (name, description, source)
-                VALUES (%s, %s, '한국장학재단')
-                ON CONFLICT DO NOTHING
-            """, (name, description))
-        page += 1
     conn.commit()
     cur.close()
     conn.close()

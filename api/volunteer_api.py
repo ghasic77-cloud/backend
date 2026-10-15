@@ -13,25 +13,23 @@ def get_volunteer_posts():
     url = "https://apis.data.go.kr/1741000/volunteerPartcptnService/getVltrSearchWordList"
     conn = get_connection()
     cur = conn.cursor()
-    page = 1
-    while True:
-        params = {"serviceKey": API_KEY, "numOfRows": "100", "pageNo": str(page), "schSign": "1"}
-        response = requests.get(url, params=params)
-        root = ET.fromstring(response.text)
-        items = root.findall('.//item')
-        if not items:
+    for page in range(1, 6):
+        try:
+            params = {"serviceKey": API_KEY, "numOfRows": "100", "pageNo": str(page), "schSign": "1"}
+            response = requests.get(url, params=params, timeout=15)
+            root = ET.fromstring(response.text)
+            items = root.findall('.//item')
+            if not items:
+                break
+            for item in items:
+                title = item.findtext('progrmSj')
+                organization = item.findtext('nanmmbyNm')
+                region = item.findtext('actPlace')
+                apply_url = item.findtext('url')
+                cur.execute("INSERT INTO volunteer_posts (title, organization, region, apply_url, source) VALUES (%s, %s, %s, %s, '1365') ON CONFLICT DO NOTHING", (title, organization, region, apply_url))
+        except Exception as e:
+            print(f"봉사 오류: {e}")
             break
-        for item in items:
-            title = item.findtext('progrmSj')
-            organization = item.findtext('nanmmbyNm')
-            region = item.findtext('actPlace')
-            apply_url = item.findtext('url')
-            cur.execute("""
-                INSERT INTO volunteer_posts (title, organization, region, apply_url, source)
-                VALUES (%s, %s, %s, %s, '1365')
-                ON CONFLICT DO NOTHING
-            """, (title, organization, region, apply_url))
-        page += 1
     conn.commit()
     cur.close()
     conn.close()

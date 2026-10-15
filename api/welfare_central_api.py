@@ -13,24 +13,23 @@ def get_central_welfare():
     url = "https://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfarelistV001"
     conn = get_connection()
     cur = conn.cursor()
-    page = 1
-    while True:
-        params = {"serviceKey": API_KEY, "numOfRows": "100", "pageNo": str(page)}
-        response = requests.get(url, params=params)
-        root = ET.fromstring(response.text)
-        items = root.findall('.//servList')
-        if not items:
+    for page in range(1, 6):
+        try:
+            params = {"serviceKey": API_KEY, "numOfRows": "100", "pageNo": str(page)}
+            response = requests.get(url, params=params, timeout=15)
+            root = ET.fromstring(response.text)
+            items = root.findall('.//servList')
+            if not items:
+                break
+            for item in items:
+                name = item.findtext('servNm')
+                description = item.findtext('servDgst')
+                apply_url = item.findtext('servDtlLink')
+                cur.execute("INSERT INTO subsidies (name, description, apply_url, source) VALUES (%s, %s, %s, '복지로_중앙') ON CONFLICT DO NOTHING", (name, description, apply_url))
+        except Exception as e:
+            print(f"복지로중앙 오류: {e}")
             break
-        for item in items:
-            name = item.findtext('servNm')
-            description = item.findtext('servDgst')
-            apply_url = item.findtext('servDtlLink')
-            cur.execute("""
-                INSERT INTO subsidies (name, description, apply_url, source)
-                VALUES (%s, %s, %s, '복지로_중앙')
-                ON CONFLICT DO NOTHING
-            """, (name, description, apply_url))
-        page += 1
+
     conn.commit()
     cur.close()
     conn.close()
