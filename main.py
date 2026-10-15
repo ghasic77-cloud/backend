@@ -26,11 +26,18 @@ app.add_middleware(
 
 def update_all():
     try:
+        print("데이터 수집 시작")
         get_volunteer_posts()
+        print("봉사 완료")
         get_local_welfare()
+
+        print("지자체 완료")
         get_central_welfare()
+        print("중앙 완료")
         get_scholarship()
+        print("장학금 완료")
         get_public_service()
+        print("공공서비스 완료")
     except Exception as e:
         print(f"데이터 수집 오류: {e}")
 
@@ -56,6 +63,7 @@ def db_test():
 @app.get("/subsidies")
 def get_subsidies(page: int = 1):
     conn = get_connection()
+
     cur = conn.cursor()
     offset = (page - 1) * 20
     cur.execute("SELECT * FROM subsidies ORDER BY id LIMIT 20 OFFSET %s", (offset,))
@@ -77,8 +85,5 @@ def get_volunteers(page: int = 1):
 
 @app.get("/fetch-data")
 def fetch_data():
-    try:
-        update_all()
-        return {"message": "데이터 수집 완료"}
-    except Exception as e:
-        return {"message": f"오류: {str(e)}"}
+    threading.Thread(target=update_all, daemon=True).start()
+    return {"message": "데이터 수집 시작됨"}
