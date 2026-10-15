@@ -5,21 +5,10 @@ from api.welfare_central_api import get_central_welfare
 from api.scholarship_api import get_scholarship
 from api.public_service_api import get_public_service
 
-scheduler = BackgroundScheduler()
-
-@scheduler.scheduled_job('cron', hour=0, minute=0)
-def update_all():
-    get_volunteer_posts()
-    get_local_welfare()
-    get_central_welfare()
-    get_scholarship()
-    get_public_service()
-
-scheduler.start()
-
 from fastapi import FastAPI
 from database import get_connection
 from dotenv import load_dotenv
+import threading
 
 load_dotenv()
 
@@ -34,6 +23,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def update_all():
+    try:
+        get_volunteer_posts()
+        get_local_welfare()
+        get_central_welfare()
+        get_scholarship()
+        get_public_service()
+    except Exception as e:
+        print(f"데이터 수집 오류: {e}")
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(update_all, 'cron', hour=0, minute=0)
+scheduler.start()
+
+# 서버 시작시 한번 실행
+threading.Thread(target=update_all, daemon=True).start()
 
 @app.get("/")
 def root():
