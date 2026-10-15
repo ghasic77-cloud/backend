@@ -26,56 +26,11 @@ app.add_middleware(
 
 def update_all():
     try:
-        print("데이터 수집 시작")
         get_volunteer_posts()
-        print("봉사 완료")
         get_local_welfare()
-        print("지자체 완료")
         get_central_welfare()
-        print("중앙 완료")
         get_scholarship()
-        print("장학금 완료")
         get_public_service()
-cat > main.py << 'EOF'
-from apscheduler.schedulers.background import BackgroundScheduler
-from api.volunteer_api import get_volunteer_posts
-from api.welfare_local_api import get_local_welfare
-from api.welfare_central_api import get_central_welfare
-from api.scholarship_api import get_scholarship
-from api.public_service_api import get_public_service
-
-from fastapi import FastAPI
-from database import get_connection
-from dotenv import load_dotenv
-import threading
-
-load_dotenv()
-
-app = FastAPI()
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-def update_all():
-    try:
-        print("데이터 수집 시작")
-        get_volunteer_posts()
-        print("봉사 완료")
-        get_local_welfare()
-        print("지자체 완료")
-        get_central_welfare()
-        print("중앙 완료")
-        get_scholarship()
-        print("장학금 완료")
-        get_public_service()
-        print("공공서비스 완료")
     except Exception as e:
         print(f"데이터 수집 오류: {e}")
 
@@ -122,5 +77,8 @@ def get_volunteers(page: int = 1):
 
 @app.get("/fetch-data")
 def fetch_data():
-    threading.Thread(target=update_all, daemon=True).start()
-    return {"message": "데이터 수집 시작됨 - 로그 확인하세요"}
+    try:
+        update_all()
+        return {"message": "데이터 수집 완료"}
+    except Exception as e:
+        return {"message": f"오류: {str(e)}"}
