@@ -3,3 +3,4 @@ uvicorn
 apscheduler
 python-dotenv
 psycopg2-binaryrequests
+requests
