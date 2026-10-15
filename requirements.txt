@@ -2,6 +2,5 @@ fastapi
 uvicorn
 apscheduler
 python-dotenv
-psycopg2-binaryrequests
-requests
+psycopg2-binary
 requests
