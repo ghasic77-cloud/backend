@@ -75,3 +75,11 @@ def get_volunteers(page: int = 1):
     cur.close()
     conn.close()
     return {"page": page, "data": rows}
+
+    @app.get("/fetch-data")
+def fetch_data():
+    try:
+        update_all()
+        return {"message": "데이터 수집 완료"}
+    except Exception as e:
+        return {"message": f"오류: {str(e)}"}
