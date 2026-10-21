@@ -139,12 +139,18 @@ def cleanup():
         WHERE a.id > b.id AND a.title = b.title AND a.organization = b.organization
     """)
     deleted_volunteers = cur.rowcount
-    try:
-        cur.execute("ALTER TABLE subsidies ADD CONSTRAINT subsidies_unique UNIQUE (name, source)")
-        cur.execute("ALTER TABLE volunteer_posts ADD CONSTRAINT volunteer_unique UNIQUE (title, organization)")
-    except Exception:
-        conn.rollback()
     conn.commit()
+
+    for sql in [
+        "ALTER TABLE subsidies ADD CONSTRAINT subsidies_unique UNIQUE (name, source)",
+        "ALTER TABLE volunteer_posts ADD CONSTRAINT volunteer_unique UNIQUE (title, organization)",
+    ]:
+        try:
+            cur.execute(sql)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
     cur.close()
     conn.close()
     return {
