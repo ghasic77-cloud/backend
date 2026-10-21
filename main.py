@@ -124,3 +124,31 @@ def get_volunteers(region: str = "", page: int = 1):
 def fetch_data():
     threading.Thread(target=update_all, daemon=True).start()
     return {"message": "데이터 수집 시작됨"}
+
+@app.get("/cleanup")
+def cleanup():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        DELETE FROM subsidies a USING subsidies b
+        WHERE a.id > b.id AND a.name = b.name AND a.source = b.source
+    """)
+    deleted_subsidies = cur.rowcount
+    cur.execute("""
+        DELETE FROM volunteer_posts a USING volunteer_posts b
+        WHERE a.id > b.id AND a.title = b.title AND a.organization = b.organization
+    """)
+    deleted_volunteers = cur.rowcount
+    try:
+        cur.execute("ALTER TABLE subsidies ADD CONSTRAINT subsidies_unique UNIQUE (name, source)")
+        cur.execute("ALTER TABLE volunteer_posts ADD CONSTRAINT volunteer_unique UNIQUE (title, organization)")
+    except Exception:
+        conn.rollback()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {
+        "message": "중복 정리 완료",
+        "지원금 삭제": deleted_subsidies,
+        "봉사 삭제": deleted_volunteers,
+    }
